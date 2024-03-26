@@ -17,9 +17,10 @@ from utils import (
     get_chat_template,
     validate_and_extract_tool_calls
 )
+from utils_logger import logger
 
 # create your pydantic model for json object here
-from typing import List, Optional
+from typing import List, Optional,Dict,Union
 from pydantic import BaseModel
 
 class Character(BaseModel):
@@ -38,31 +39,14 @@ class Character(BaseModel):
 pydantic_schema = Character.schema_json()
 
 class ModelInference:
-    def __init__(self):
-        model_path='NousResearch/Hermes-2-Pro-Mistral-7B'
+    def __init__(self, model,tokenizer):
         self.chat_template="chatml"
-        load_in_4bit=False
         
         inference_logger.info(print_nous_text_art())
-        self.bnb_config = None
 
-        if load_in_4bit == "True":
-            self.bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-            )
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            return_dict=True,
-            quantization_config=self.bnb_config,
-            torch_dtype=torch.float16,
-            # attn_implementation="flash_attention_2",
-            device_map="auto",
-        )
+        self.model = model
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = tokenizer
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.padding_side = "left"
 
@@ -93,16 +77,21 @@ class ModelInference:
         return completion
 
     def generate_json_completion(self, query, max_depth=5):
+
         try:
             depth = 0
-            sys_prompt = "You are a helpful assistant that answers in JSON. Here's the json schema you must adhere to:\n<schema>\n{schema}\n<schema>"
-            prompt = [{"role": "system", "content": sys_prompt}]
+            # sys_prompt = "You are a helpful assistant that answers in JSON. Here's the json schema you must adhere to:\n<schema>\n{schema}\n<schema>"
+            sys_prompt = f"You are a helpful assistant that answers in JSON. Here's the json schema you must adhere to:\n<schema>\n{pydantic_schema}\n<schema>"
+
+            prompt:List[Dict[str,str]] = [{"role": "system", "content": sys_prompt}]
             prompt.append({"role": "user", "content": query})
 
             inference_logger.info(f"Running inference to generate json object for pydantic schema:\n{json.dumps(json.loads(pydantic_schema), indent=2)}")
             completion = self.run_inference(prompt)
 
-            def recursive_loop(prompt, completion, depth):
+            def recursive_loop(prompt:List[Dict[str,str]], completion:str, depth:int):
+                output:str=""
+
                 nonlocal max_depth
 
                 assistant_message = get_assistant_message(completion, self.chat_template, self.tokenizer.eos_token)
@@ -112,24 +101,29 @@ class ModelInference:
                     validation, json_object, error_message = validate_json_data(assistant_message, json.loads(pydantic_schema))
                     if validation:
                         inference_logger.info(f"Assistant Message:\n{assistant_message}")
+                        output+=assistant_message
                         inference_logger.info(f"json schema validation passed")
                         inference_logger.info(f"parsed json object:\n{json.dumps(json_object, indent=2)}")
+                        return output
                     elif error_message:
                         inference_logger.info(f"Assistant Message:\n{assistant_message}")
+                        output+=assistant_message
+
                         inference_logger.info(f"json schema validation failed")
                         tool_message += f"<tool_response>\nJson schema validation failed\nHere's the error stacktrace: {error_message}\nPlease return corrrect json object\n<tool_response>"
                         
                         depth += 1
                         if depth >= max_depth:
                             print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                            return
+                            return output
                         
                         prompt.append({"role": "tool", "content": tool_message})
                         completion = self.run_inference(prompt)
-                        recursive_loop(prompt, completion, depth)
+                        output+=recursive_loop(prompt, completion, depth)
                 else:
                     inference_logger.warning("Assistant message is None")
-            recursive_loop(prompt, completion, depth)
+                    return output
+            return recursive_loop(prompt, completion, depth)
         except Exception as e:
             inference_logger.error(f"Exception occurred: {e}")
             raise e

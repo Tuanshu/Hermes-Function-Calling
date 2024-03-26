@@ -1,12 +1,12 @@
-import json
-
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.requests import Request
 from presentation import chat
 from config import PORT
+import json
 
+## 
 app = FastAPI(docs_url=None, redoc_url=None)
 
 

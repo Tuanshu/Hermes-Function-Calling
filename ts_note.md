@@ -49,3 +49,4 @@ python functioncall.py --query "I need the current stock price of Tesla (TSLA)"
 
 OK了
 
+python jsonmode.py --query "Please return a json object to represent Goku from the anime Dragon Ball Z?"
