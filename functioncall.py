@@ -77,6 +77,7 @@ class ModelInference:
         function_args = tool_call.get("arguments", {})
 
         inference_logger.info(f"Invoking function call {function_name} ...")
+
         function_response = function_to_call(*function_args.values())
         results_dict = f'{{"name": "{function_name}", "content": {function_response}}}'
         return results_dict

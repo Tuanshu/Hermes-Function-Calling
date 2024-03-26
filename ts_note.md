@@ -50,3 +50,12 @@ python functioncall.py --query "I need the current stock price of Tesla (TSLA)"
 OK了
 
 python jsonmode.py --query "Please return a json object to represent Goku from the anime Dragon Ball Z?"
+python application/functioncall_use_case.py --query "Please return a json object to represent Goku from the anime Dragon Ball Z?"
+python test.py --query "what is 369x397?"
+
+
+感覺問題就是langchain的@tool會overwrite function為BaseTool
+    # by TS, not allowing overwrite
+    # def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
+    #     """Make tool callable."""
+    #     return self.run(tool_input, callbacks=callbacks)

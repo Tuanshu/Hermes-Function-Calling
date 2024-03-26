@@ -58,7 +58,11 @@ def code_interpreter(code_markdown: str) -> dict | str:
         error_message = f"An error occurred: {e}"
         inference_logger.error(error_message)
         return error_message
-    
+@tool
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers."""
+    return a * b
+
 @tool
 def calculator(number_1: int, number_2: int, operation: str) -> int | float:
     """
@@ -331,9 +335,10 @@ def get_company_profile(symbol: str) -> dict:
 def get_openai_tools() -> List[dict]:
     functions = [
         code_interpreter,
-        calculator
+        calculator,
+        multiply,
         # google_search_and_scrape,
-        # get_current_stock_price,
+        get_current_stock_price,
         # get_company_news,
         # get_company_profile,
         # get_stock_fundamentals,

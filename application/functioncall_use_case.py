@@ -68,6 +68,9 @@ class FunctionCallUseCase:
         function_to_call = getattr(avaliable_functions, function_name, None)
         function_args = tool_call.get("arguments", {})
 
+        inference_logger.info(f"[ts] function_args: {function_args}")
+        inference_logger.info(f"[ts] function_to_call: {function_to_call}")
+
         inference_logger.info(f"Invoking function call {function_name} ...")
         function_response = function_to_call(*function_args.values())
         results_dict = f'{{"name": "{function_name}", "content": {function_response}}}'
@@ -156,3 +159,6 @@ class FunctionCallUseCase:
         except Exception as e:
             inference_logger.error(f"Exception occurred: {e}")
             raise e
+
+
+
