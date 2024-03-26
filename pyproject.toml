@@ -20,6 +20,9 @@ ninja = "1.11.1.1"
 protobuf = "^5.26.0"
 sentencepiece = "^0.2.0"
 art = "^6.1"
+fastapi = "^0.110.0"
+uvicorn = "^0.29.0"
+openai = "^1.14.3"
 
 
 [build-system]

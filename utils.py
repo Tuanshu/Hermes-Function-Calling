@@ -64,7 +64,7 @@ def get_chat_template(chat_template):
         print(f"Error loading template: {e}")
         return None
 
-def get_assistant_message(completion, chat_template, eos_token):
+def get_assistant_message(completion:str, chat_template:str, eos_token:str)->str:
     """define and match pattern to find the assistant message"""
     completion = completion.strip()
 
