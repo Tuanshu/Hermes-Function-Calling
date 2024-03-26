@@ -39,5 +39,5 @@ async def create_chat_completion(request: ChatCompletionRequest, function_use_ca
         message=rtn_messages[-1],
         finish_reason='stop',
     )
-    return ChatCompletionResponse(model=request.model, choices=[choice_data], object='chat.completion' ,messages=rtn_messages)
+    return ChatCompletionResponse(model=request.model, choices=[choice_data], object='chat.completion' ,messages=rtn_messages,failures=[])
 

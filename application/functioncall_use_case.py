@@ -8,7 +8,7 @@ from transformers import (
     BitsAndBytesConfig
 )
 
-import avaliable_functions
+from application import avaliable_functions
 from prompter import PromptManager
 from validator import validate_function_call_schema
 
