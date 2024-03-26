@@ -1,0 +1,139 @@
+2024-03-26:05:09:17,355 INFO     [jsonmode.py:42] None
+2024-03-26:05:09:29,366 INFO     [jsonmode.py:69] MistralConfig {
+  "_name_or_path": "NousResearch/Hermes-2-Pro-Mistral-7B",
+  "architectures": [
+    "MistralForCausalLM"
+  ],
+  "attention_dropout": 0.0,
+  "bos_token_id": 1,
+  "eos_token_id": 32000,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 14336,
+  "max_position_embeddings": 32768,
+  "model_type": "mistral",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 8,
+  "rms_norm_eps": 1e-05,
+  "rope_theta": 10000.0,
+  "sliding_window": 4096,
+  "tie_word_embeddings": false,
+  "torch_dtype": "float16",
+  "transformers_version": "4.39.1",
+  "use_cache": false,
+  "vocab_size": 32032
+}
+
+2024-03-26:05:09:29,368 INFO     [jsonmode.py:70] GenerationConfig {
+  "bos_token_id": 1,
+  "do_sample": true,
+  "eos_token_id": 32000
+}
+
+2024-03-26:05:09:29,368 INFO     [jsonmode.py:71] {'bos_token': '<s>', 'eos_token': '<|im_end|>', 'unk_token': '<unk>', 'pad_token': '<|im_end|>'}
+2024-03-26:05:09:29,368 INFO     [jsonmode.py:98] Running inference to generate json object for pydantic schema:
+{
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "species": {
+      "title": "Species",
+      "type": "string"
+    },
+    "role": {
+      "title": "Role",
+      "type": "string"
+    },
+    "personality_traits": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Personality Traits"
+    },
+    "special_attacks": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Special Attacks"
+    }
+  },
+  "required": [
+    "name",
+    "species",
+    "role",
+    "personality_traits",
+    "special_attacks"
+  ],
+  "title": "Character",
+  "type": "object"
+}
+2024-03-26:05:09:31,954 INFO     [validator.py:130] Validation failed for JSON data: Error occurred: 'species' is a required property
+
+Failed validating 'required' in schema:
+    {'properties': {'name': {'title': 'Name', 'type': 'string'},
+                    'personality_traits': {'anyOf': [{'items': {'type': 'string'},
+                                                      'type': 'array'},
+                                                     {'type': 'null'}],
+                                           'title': 'Personality Traits'},
+                    'role': {'title': 'Role', 'type': 'string'},
+                    'special_attacks': {'anyOf': [{'items': {'type': 'string'},
+                                                   'type': 'array'},
+                                                  {'type': 'null'}],
+                                        'title': 'Special Attacks'},
+                    'species': {'title': 'Species', 'type': 'string'}},
+     'required': ['name',
+                  'species',
+                  'role',
+                  'personality_traits',
+                  'special_attacks'],
+     'title': 'Character',
+     'type': 'object'}
+
+On instance:
+    {'abilities': ['Ki manipulation', 'Super Saiyan transformation'],
+     'alignment': 'Good',
+     'name': 'Goku',
+     'occupation': 'Fighter',
+     'race': 'Saiyan'}
+2024-03-26:05:09:31,954 INFO     [jsonmode.py:114] Assistant Message:
+{"name": "Goku", "race": "Saiyan", "occupation": "Fighter", "abilities": ["Ki manipulation", "Super Saiyan transformation"], "alignment": "Good"}
+2024-03-26:05:09:31,954 INFO     [jsonmode.py:115] json schema validation failed
+2024-03-26:05:09:34,751 INFO     [validator.py:128] JSON data is valid against the schema.
+2024-03-26:05:09:34,751 INFO     [jsonmode.py:110] Assistant Message:
+{"name": "Goku", "species": "Saiyan", "role": "Protagonist", "personality_traits": ["Kind-hearted", "Determined", "Strong-willed"], "special_attacks": ["Kamehameha", "Instant Transmission"]}
+2024-03-26:05:09:34,751 INFO     [jsonmode.py:111] json schema validation passed
+2024-03-26:05:09:34,755 INFO     [jsonmode.py:112] parsed json object:
+{
+  "name": "Goku",
+  "species": "Saiyan",
+  "role": "Protagonist",
+  "personality_traits": [
+    "Kind-hearted",
+    "Determined",
+    "Strong-willed"
+  ],
+  "special_attacks": [
+    "Kamehameha",
+    "Instant Transmission"
+  ]
+}
