@@ -135,10 +135,10 @@ class ModelInference:
                     depth += 1
                     if depth >= max_depth:
                         print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                        return
+                        return prompt
 
                     completion = self.run_inference(prompt)
-                    recursive_loop(prompt, completion, depth)
+                    return recursive_loop(prompt, completion, depth)
                 elif error_message:
                     inference_logger.info(f"Assistant Message:\n{assistant_message}")
                     tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
@@ -150,11 +150,15 @@ class ModelInference:
                         return
 
                     completion = self.run_inference(prompt)
-                    recursive_loop(prompt, completion, depth)
+                    return recursive_loop(prompt, completion, depth)
                 else:
                     inference_logger.info(f"Assistant Message:\n{assistant_message}")
 
-            recursive_loop(prompt, completion, depth)
+                    # the followiing is added by ts
+                    prompt.append({"role": "assistant", "content": assistant_message})
+                    return prompt
+
+            return recursive_loop(prompt, completion, depth)
 
         except Exception as e:
             inference_logger.error(f"Exception occurred: {e}")
@@ -178,4 +182,6 @@ if __name__ == "__main__":
         inference = ModelInference(model_path, args.chat_template, args.load_in_4bit)
         
     # Run the model evaluator
-    inference.generate_function_call(args.query, args.chat_template, args.num_fewshot, args.max_depth)
+    result=inference.generate_function_call(args.query, args.chat_template, args.num_fewshot, args.max_depth)
+
+    print(f'[ts] results (should be all promts)={result}')

@@ -2,11 +2,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 import time
 
-
-class ChatMessage(BaseModel):
-    role: Literal["user", "assistant", "system", "function"]
-    content: Optional[str]
-    function_call: Optional[Dict] = None
+from domain_models import ChatMessage
 
 
 class ChatCompletionRequest(BaseModel):
@@ -44,6 +40,7 @@ class ChatCompletionResponse(BaseModel):
     model: str
     object: Literal['chat.completion', 'chat.completion.chunk']
     choices: List[Union[ChatCompletionResponseChoice, ChatCompletionResponseStreamChoice]]
+    messages:List[ChatMessage] # a temperary fields, returning all messages (may yield problem if there are some json problem)
     created: Optional[int] = Field(default_factory=lambda: int(time.time()))
     failures: List  # return some comment about the parsing
 
