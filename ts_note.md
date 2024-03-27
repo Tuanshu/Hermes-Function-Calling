@@ -59,3 +59,17 @@ python test.py --query "what is 369x397?"
     # def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
     #     """Make tool callable."""
     #     return self.run(tool_input, callbacks=callbacks)
+
+python test.py --query "I need the current stock price of Tesla (TSLA)"
+
+
+有@tool
+{\'type\': \'function\', \'function\': {\'name\': \'code_interpreter\', \'description\': \'code_interpreter(code_markdown: str) -> dict | str - Execute the provided Python code string on the terminal using exec.\\n    The string should contain valid, executable and pure python code in markdown syntax.\\n    Code should also import any required python packages.\\n\\n    Parameters:\\n    - code_markdown (str): The Python code with markdown syntax to be executed.\\n      for eg. ```python\\n<code-string>\\n```\\n\\n    Returns:\\n    dict: A dictionary containing variables declared and values returned by function calls.\\n\\n    Note: Use this function with caution, as executing arbitrary code can pose security risks.\', \'parameters\': {\'type\': \'object\', \'properties\': {\'code_markdown\': {\'type\': \'string\'}}, \'required\': [\'code_markdown\']}}}, 
+
+
+沒有@tool
+{\'type\': \'function\', \'function\': {\'name\': \'code_interpreter\', \'description\': \'    Execute the provided Python code string on the terminal using exec.\\n    The string should contain valid, executable and pure python code in markdown syntax.\\n    Code should also import any required python packages.     Parameters:\\n    - code_markdown (str): The Python code with markdown syntax to be executed.\\n      for eg. ```python\\n<code-string>\\n```     Returns:\\n    dict: A dictionary containing variables declared and values returned by function calls.     Note: Use this function with caution, as executing arbitrary code can pose security risks.\\n    \', \'parameters\': {\'type\': \'object\', \'properties\': {\'code_markdown\': {\'type\': \'string\'}}, \'required\': [\'code_markdown\']}}}, 
+
+1. 是否有@tool在產生文檔上的不同:
+ a. 如果有, 則會多一個\'code_interpreter(code_markdown: str) -> dict | str的python style type hint.
+ b. 如果沒有, 

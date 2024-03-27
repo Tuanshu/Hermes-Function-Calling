@@ -11,7 +11,7 @@ from utils import inference_logger
 from langchain.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-@tool
+#@tool
 def code_interpreter(code_markdown: str) -> dict | str:
     """
     Execute the provided Python code string on the terminal using exec.
@@ -58,12 +58,12 @@ def code_interpreter(code_markdown: str) -> dict | str:
         error_message = f"An error occurred: {e}"
         inference_logger.error(error_message)
         return error_message
-@tool
+#@tool
 def multiply(a: int, b: int) -> int:
     """Multiply two numbers."""
     return a * b
 
-@tool
+#@tool
 def calculator(number_1: int, number_2: int, operation: str) -> int | float:
     """
     Perform simple arithmetic operations between two integer values.
@@ -99,7 +99,7 @@ def calculator(number_1: int, number_2: int, operation: str) -> int | float:
         return str(e)
 
 
-@tool
+# @tool
 def google_search_and_scrape(query: str) -> dict:
     """
     Performs a Google search for the given query, retrieves the top search result URLs,
@@ -136,7 +136,7 @@ def google_search_and_scrape(query: str) -> dict:
                 results.append({'url': url, 'content': text_content, 'tables': table_data})
     return results
 
-@tool
+# @tool
 def get_current_stock_price(symbol: str) -> float:
   """
   Get the current stock price for a given symbol.
@@ -156,7 +156,7 @@ def get_current_stock_price(symbol: str) -> float:
     print(f"Error fetching current price for {symbol}: {e}")
     return None
 
-@tool
+# @tool
 def get_stock_fundamentals(symbol: str) -> dict:
     """
     Get fundamental data for a given stock symbol using yfinance API.
@@ -202,7 +202,7 @@ def get_stock_fundamentals(symbol: str) -> dict:
         print(f"Error getting fundamentals for {symbol}: {e}")
         return {}
 
-@tool
+# @tool
 def get_financial_statements(symbol: str) -> dict:
     """
     Get financial statements for a given stock symbol.
@@ -221,7 +221,7 @@ def get_financial_statements(symbol: str) -> dict:
         print(f"Error fetching financial statements for {symbol}: {e}")
         return {}
 
-@tool
+# @tool
 def get_key_financial_ratios(symbol: str) -> dict:
     """
     Get key financial ratios for a given stock symbol.
@@ -240,7 +240,7 @@ def get_key_financial_ratios(symbol: str) -> dict:
         print(f"Error fetching key financial ratios for {symbol}: {e}")
         return {}
 
-@tool
+# @tool
 def get_analyst_recommendations(symbol: str) -> pd.DataFrame:
     """
     Get analyst recommendations for a given stock symbol.
@@ -259,7 +259,7 @@ def get_analyst_recommendations(symbol: str) -> pd.DataFrame:
         print(f"Error fetching analyst recommendations for {symbol}: {e}")
         return pd.DataFrame()
 
-@tool
+# @tool
 def get_dividend_data(symbol: str) -> pd.DataFrame:
     """
     Get dividend data for a given stock symbol.
@@ -278,7 +278,7 @@ def get_dividend_data(symbol: str) -> pd.DataFrame:
         print(f"Error fetching dividend data for {symbol}: {e}")
         return pd.DataFrame()
 
-@tool
+# @tool
 def get_company_news(symbol: str) -> pd.DataFrame:
     """
     Get company news and press releases for a given stock symbol.
@@ -296,7 +296,7 @@ def get_company_news(symbol: str) -> pd.DataFrame:
         print(f"Error fetching company news for {symbol}: {e}")
         return pd.DataFrame()
 
-@tool
+# @tool
 def get_technical_indicators(symbol: str) -> pd.DataFrame:
     """
     Get technical indicators for a given stock symbol.
@@ -314,7 +314,7 @@ def get_technical_indicators(symbol: str) -> pd.DataFrame:
         print(f"Error fetching technical indicators for {symbol}: {e}")
         return pd.DataFrame()
 
-@tool
+# @tool
 def get_company_profile(symbol: str) -> dict:
     """
     Get company profile and overview for a given stock symbol.
@@ -332,11 +332,19 @@ def get_company_profile(symbol: str) -> dict:
         print(f"Error fetching company profile for {symbol}: {e}")
         return {}
 
-def get_openai_tools() -> List[dict]:
+def get_openai_tool_dicts() -> List[dict]:
+    """
+    can be used on python functions with / without @tool decorator from langchain.
+    Originally was designed to be used on function with @tool.
+
+    If using on function without @tool, something would be missing:
+    a. python-tyle function type hint in description (not neccesarry?)
+    b. some description, Parameters seem fine, Args is not OK, Note and Returns depends (on what?) 
+    """
     functions = [
-        code_interpreter,
-        calculator,
-        multiply,
+        # code_interpreter,
+        # calculator,
+        # multiply,
         # google_search_and_scrape,
         get_current_stock_price,
         # get_company_news,
@@ -350,4 +358,29 @@ def get_openai_tools() -> List[dict]:
     ]
 
     tools = [convert_to_openai_tool(f) for f in functions]
+    return tools
+
+
+
+def get_openai_tool_dicts_no_at_tool_dec() -> List[dict]:
+    """
+    Used on python functions without @tool decorator from langchain.
+    """
+    functions = [
+        # code_interpreter,
+        # calculator,
+        # multiply,
+        # google_search_and_scrape,
+        get_current_stock_price,
+        # get_company_news,
+        # get_company_profile,
+        # get_stock_fundamentals,
+        # get_financial_statements,
+        # get_key_financial_ratios,
+        # get_analyst_recommendations,
+        # get_dividend_data,
+        # get_technical_indicators
+    ]
+
+    tools = [convert_to_openai_tool(tool(f)) for f in functions]
     return tools

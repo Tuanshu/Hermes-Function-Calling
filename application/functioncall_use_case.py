@@ -99,7 +99,7 @@ class FunctionCallUseCase:
             depth = 0
             user_message = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
             chat = [{"role": "user", "content": user_message}]
-            tools = avaliable_functions.get_openai_tools()
+            tools = avaliable_functions.get_openai_tool_dicts()
             messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
             completion = self.run_inference(messages)
 
