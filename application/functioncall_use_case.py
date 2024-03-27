@@ -102,17 +102,38 @@ class FunctionCallUseCase:
         return completion
 
 
+    def run_inference_from_messages(self, messages:List[ChatMessage]):
+        prompt:List[Dict]= [message.model_dump().pop('function_call') for message in messages]
+
+        inputs = self.tokenizer.apply_chat_template(
+            prompt,
+            add_generation_prompt=True,
+            return_tensors='pt'
+        )
+
+        tokens = self.model.generate(
+            inputs.to(self.model.device),
+            max_new_tokens=1500,
+            temperature=0.8,
+            repetition_penalty=1.1,
+            do_sample=True,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
+        return completion
+
     # this is a async generator (with yield instead of return)
     async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
         try:
             depth = 0
             user_message_content = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
-            chat = [{"role": "user", "content": user_message_content}]
+            previous_messages = [ChatMessage(role='user', content=user_message_content)]
+
             #tools = avaliable_functions.get_openai_tool_dicts()
             # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
             tools = avaliable_functions.get_openai_tool_dicts_no_at_tool_dec()
 
-            messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
+            messages:List[ChatMessage] = self.prompter.generate_prompt_from_messages(previous_messages, tools, num_fewshot)
             user_message=messages[-1]
             yield user_message # the last message in generate_prompt is usr message. system message omitted.
 

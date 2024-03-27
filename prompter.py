@@ -1,6 +1,6 @@
 import datetime
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict,List
 from schema import FunctionCall
 from utils import (
     get_fewshot_examples
@@ -8,6 +8,7 @@ from utils import (
 import yaml
 import json
 import os
+from presentation.dto import ChatMessage
 
 class PromptSchema(BaseModel):
     Role: str
@@ -75,3 +76,30 @@ class PromptManager:
         return prompt
         
         
+
+    def generate_prompt_from_messages(self, previous_messages:List[ChatMessage], tools, num_fewshot=None, max_history_length:int=10)->List[ChatMessage]:
+        prompt_path = os.path.join(self.script_dir, 'prompt_assets', 'sys_prompt.yml')
+        prompt_schema = self.read_yaml_file(prompt_path)
+
+        if num_fewshot is not None:
+            examples = get_fewshot_examples(num_fewshot)
+        else:
+            examples = None
+
+        schema_json = json.loads(FunctionCall.schema_json())
+        #schema = schema_json.get("properties", {})
+
+        variables = {
+            "date": datetime.date.today(),
+            "tools": tools,
+            "examples": examples,
+            "schema": schema_json
+        }
+        sys_prompt = self.format_yaml_prompt(prompt_schema, variables)
+
+        messages = [
+            ChatMessage(content=sys_prompt,role='system')
+            ]
+
+        messages.extend(previous_messages[-1*max_history_length:])
+        return messages

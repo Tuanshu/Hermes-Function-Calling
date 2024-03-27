@@ -11,14 +11,14 @@ from utils import inference_logger
 from langchain.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-def inspect_excel_file(file_path: str) -> dict:
+def inspect_excel_file(file_name:str) -> dict:
     """
     Inspects an Excel file and provides basic information about its contents.
 
-    This function loads an Excel file from the specified file path and analyzes its structure. It returns a dictionary containing information about the columns and rows of the file.
+    This function loads the Excel file uploaded by the user and analyzes its structure. It returns a dictionary containing information about the columns and rows of the file.
 
     Parameters:
-    - file_path (str): The path to the Excel file that needs to be inspected.
+    - file_name (str): The name of the file.
 
     Returns:
     dict: A dictionary containing two keys:
@@ -386,7 +386,7 @@ def get_openai_tool_dicts_no_at_tool_dec() -> List[dict]:
     Used on python functions without @tool decorator from langchain.
     """
     functions = [
-        inspect_excel_file,
+        # inspect_excel_file,
         # code_interpreter,
         # calculator,
         # multiply,
