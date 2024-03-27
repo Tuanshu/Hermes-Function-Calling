@@ -28,11 +28,9 @@ from domain_models import ChatMessage
 # HACK: !!!!!!!
 from presentation.dto import ChatCompletionResponse,ChatCompletionRequest
 
-
-# TS set seed
-seed_value = 41
-torch.manual_seed(seed_value)
-
+# # TS set seed
+# seed_value = 41
+# torch.manual_seed(seed_value)
 
 
 class FunctionCallUseCase:
@@ -88,6 +86,9 @@ class FunctionCallUseCase:
         return results_dict
     
     def run_inference(self, prompt):
+                # TS set seed
+        seed_value = 41
+        torch.manual_seed(seed_value)
 
         # apply_chat_template是transormers預設的方法, 居然好像可以直接處理pydantic model, 而且似乎空的function_call沒造成影響
         # 好像是因為裡面有ctx = self.new_context(dict(*args, **kwargs))
@@ -179,7 +180,7 @@ class FunctionCallUseCase:
                 print(f'[ts] check messages type before run_inference={type(messages[-1])}')
 
 
-                #completion = self.run_inference(messages)
+                # completion = self.run_inference(messages)
                 completion = self.call_inference(messages)
 
 

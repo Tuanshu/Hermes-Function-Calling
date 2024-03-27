@@ -25,12 +25,6 @@ from utils import (
 from domain_models import ChatMessage
 
 
-# TS set seed
-seed_value = 41
-torch.manual_seed(seed_value)
-
-
-
 class StandaloneUseCase:
     def __init__(self, model,tokenizer):
         self.chat_template="chatml"
@@ -54,6 +48,10 @@ class StandaloneUseCase:
         inference_logger.info(self.tokenizer.special_tokens_map)
 
     async def run_inference(self, prompt:List[Union[Dict[str,str],ChatMessage]]):
+
+        # TS set seed
+        seed_value = 41
+        torch.manual_seed(seed_value)
 
         # apply_chat_template是transormers預設的方法, 居然好像可以直接處理pydantic model, 而且似乎空的function_call沒造成影響
         # 好像是因為裡面有ctx = self.new_context(dict(*args, **kwargs))
