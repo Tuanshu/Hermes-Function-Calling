@@ -59,9 +59,10 @@ async def chat_completion_stream(request: ChatCompletionRequest, function_use_ca
 
     # not respecting function for now
 
-    input_message = request.messages[-1]
-    query=input_message.content
-    generator:AsyncGenerator[ChatMessage, None]=function_use_case.achat(query=query)
+    # input_message = request.messages[-1]
+    # query=input_message.content
+    # generator:AsyncGenerator[ChatMessage, None]=function_use_case.achat(query=query)
+    generator:AsyncGenerator[ChatMessage, None]=function_use_case.achat(previous_messages=request.messages)
 
     return StreamingResponse(
         main_stream(generator),
@@ -84,7 +85,9 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
                 first_flag = False
 
             # 可能需要tool_called flag, 是因為最後儲存時還會再呼叫一次, 可能會導致重複出現
-            if message.get('role') == 'tool_call_args' and not tool_called:
+            # if message.get('role') == 'tool_call_args' and not tool_called:
+            if message.role == 'tool_call_args' and not tool_called:
+
                 current_sse_data = SSEDataToolCall()
                 yield f"id: {event_id}\nevent: tool_call\ndata: {current_sse_data.model_dump_json()}\n\n"
                 event_id += 1
@@ -94,7 +97,8 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
             # HACK: 為了避免tool_call之後還有message, 故僅在not tool call時回傳message event
             # (但message還是會更新, 以獲取total_token, 只是不傳給用戶)
             if not tool_called:
-                current_sse_data = SSEDataIMain(choices=[ChatCompletionResponseChoice(message=ChatMessage(role=message.get('role'),content=message.get('content')))])
+                # current_sse_data = SSEDataIMain(choices=[ChatCompletionResponseChoice(message=ChatMessage(role=message.get('role'),content=message.get('content')))])
+                current_sse_data = SSEDataIMain(choices=[ChatCompletionResponseChoice(message=ChatMessage(role=message.role,content=message.content))])
                 yield f"id: {event_id}\nevent: {SSEType.BODY.value}\ndata: {current_sse_data.model_dump_json()}\n\n"
                 event_id += 1
 

@@ -87,7 +87,7 @@ class FunctionCallUseCase:
 
         # apply_chat_template是transormers預設的方法, 居然好像可以直接處理pydantic model, 而且似乎空的function_call沒造成影響
         # 好像是因為裡面有ctx = self.new_context(dict(*args, **kwargs))
-        
+
         inputs = self.tokenizer.apply_chat_template(
             prompt,
             add_generation_prompt=True,
@@ -127,11 +127,23 @@ class FunctionCallUseCase:
     #     return completion
 
     # this is a async generator (with yield instead of return)
-    async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
+    #async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
+
+    async def achat(self, previous_messages:List[ChatMessage], num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
+
         try:
             depth = 0
-            user_message_content = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
-            previous_messages = [ChatMessage(role='user', content=user_message_content)]
+
+            if isinstance(previous_messages,str): 
+                user_message_content = f"{previous_messages}\nThis is the first turn and you don't have <tool_results> to analyze yet"
+                previous_messages = [ChatMessage(role='user', content=user_message_content)]
+            elif isinstance(previous_messages,list):
+                 # fix last message (user)
+                 last_message:ChatMessage = previous_messages[-1]
+                 assert last_message.role == 'user', 'the latest message is not from user!'
+
+                 query = last_message.content
+                 last_message.content=f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
 
             #tools = avaliable_functions.get_openai_tool_dicts()
             # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
