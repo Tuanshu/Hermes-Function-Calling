@@ -386,7 +386,7 @@ def get_openai_tool_dicts_no_at_tool_dec() -> List[dict]:
     Used on python functions without @tool decorator from langchain.
     """
     functions = [
-        # inspect_excel_file,
+        inspect_excel_file,
         # code_interpreter,
         # calculator,
         # multiply,
