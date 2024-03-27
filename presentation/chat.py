@@ -16,7 +16,9 @@ from typing import List,Dict,AsyncGenerator
 
 from utils_logger import logger
 from application.functioncall_use_case import FunctionCallUseCase
-from common.dependencies import get_function_call_use_case
+from application.stanalone_use_case import StandaloneUseCase
+
+from common.dependencies import get_function_call_use_case,get_standalone_use_case
 from common.preload import preloaded_model,preloaded_tokenizer
 from .dto import SSEDataError,SSEDataIMain,SSEDataInit,SSEDataToolCall,SSEType,SSEDataDone,ChatCompletionResponse, ChatCompletionRequest,ChatMessage,ChatCompletionResponseChoice
 # temp
@@ -24,6 +26,16 @@ from .dto import SSEDataError,SSEDataIMain,SSEDataInit,SSEDataToolCall,SSEType,S
 
 
 router = APIRouter()
+
+# standalone API, not streaming
+@router.post('/openai/completions', response_model=ChatCompletionResponse)
+async def create_chat_completion(request: ChatCompletionRequest, standalone_use_case:StandaloneUseCase=Depends(get_standalone_use_case)):
+    logger.info(f'openai-like api called, first messages={request.messages[0].model_dump_json()}')
+    if request.stream:  # 假设stream是请求模型的一部分
+        raise NotImplementedError('streaming not yet implmented.')
+        
+    else:
+        return await standalone_use_case.run_inference(prompt=request.messages)
 
 
 
