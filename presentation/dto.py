@@ -89,7 +89,7 @@ class SSEDataError(BaseModel): # according to openai
     choices: List[ChatCompletionResponseChoice]
 
 
-class DoneDataSSE(BaseModel): # according to openai 
+class SSEDataDone(BaseModel): # according to openai 
     id:str # this is session id = chatcmpl-97EFtZwtMquoIi1mpst2d54A1YaqT
     object: str = "chat.completion.chunk"
     created: int = 1711500000 # unix time
