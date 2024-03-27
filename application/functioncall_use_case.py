@@ -24,6 +24,13 @@ from utils import (
 
 from domain_models import ChatMessage
 
+
+# TS set seed
+seed_value = 41
+torch.manual_seed(seed_value)
+
+
+
 class FunctionCallUseCase:
     def __init__(self, model,tokenizer):
         self.chat_template="chatml"
@@ -89,7 +96,7 @@ class FunctionCallUseCase:
             temperature=0.8,
             repetition_penalty=1.1,
             do_sample=True,
-            eos_token_id=self.tokenizer.eos_token_id
+            eos_token_id=self.tokenizer.eos_token_id,
         )
         completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
         return completion
@@ -169,29 +176,30 @@ class FunctionCallUseCase:
     async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
         try:
             depth = 0
-            user_message = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
-            chat = [{"role": "user", "content": user_message}]
+            user_message_content = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
+            chat = [{"role": "user", "content": user_message_content}]
             #tools = avaliable_functions.get_openai_tool_dicts()
             # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
             tools = avaliable_functions.get_openai_tool_dicts_no_at_tool_dec()
 
             messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
-            yield messages[-1] # addtional yield
+            user_message=messages[-1]
+            yield user_message # the last message in generate_prompt is usr message. system message omitted.
 
             completion = self.run_inference(messages)
 
             async def arecursive_loop(messages:List[ChatMessage], completion, depth)->AsyncGenerator[ChatMessage, None]:
                 nonlocal max_depth # 好像不太需要nonlocal? 不太確定
-                tool_calls, assistant_message, error_message = self.process_completion_and_validate(completion, self.chat_template)
+                tool_calls, assistant_message_content, error_message = self.process_completion_and_validate(completion, self.chat_template)
                 tool_calls:List[Dict]
 
-                new_message={"role": "assistant", "content": assistant_message}
-                messages.append(new_message)
-                yield new_message # addtional yield
+                assistant_message={"role": "assistant", "content": assistant_message_content}
+                messages.append(assistant_message)
+                yield assistant_message # addtional yield
 
-                tool_message = f"Agent iteration {depth} to assist with user query: {query}\n"
+                tool_message = f"Agent iteration {depth} to assist with user query: {query}\n" # Don't need this line?
                 if tool_calls:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
+                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
 
                     for tool_call in tool_calls:
                         validation, message = validate_function_call_schema(tool_call, tools)
@@ -207,9 +215,9 @@ class FunctionCallUseCase:
                             inference_logger.info(message)
                             tool_message += f"<tool_response>\nThere was an error validating function call against function signature: {tool_call.get('name')}\nHere's the error traceback: {message}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
 
-                    new_message={"role": "tool", "content": tool_message}
-                    messages.append(new_message)
-                    yield new_message # addtional yield
+                    tool_response_message={"role": "tool", "content": tool_message}
+                    messages.append(tool_response_message)
+                    yield tool_response_message # addtional yield
 
 
                     depth += 1
@@ -226,7 +234,7 @@ class FunctionCallUseCase:
 
 
                 elif error_message:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
+                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
                     tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
 
                     new_message={"role": "tool", "content": tool_message}
@@ -243,9 +251,9 @@ class FunctionCallUseCase:
                     async for deeper_value in arecursive_loop(messages, completion, depth):
                         yield deeper_value
                 else:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
+                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
                     # the followiing is added by ts
-                    new_message={"role": "assistant", "content": assistant_message}
+                    new_message={"role": "assistant", "content": assistant_message_content}
                     messages.append(new_message)
                     yield new_message
 
