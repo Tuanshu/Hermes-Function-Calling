@@ -22,9 +22,9 @@ class ChatCompletionRequest(BaseModel):
 
 
 class ChatCompletionResponseChoice(BaseModel):
-    index: int
-    message: Union[ChatMessage]
-    finish_reason: Literal['stop', 'length', 'function_call']
+    index: int = 0
+    message: Union[ChatMessage] # NOTE: 其實應該要用delata, 待會再處理
+    finish_reason: Union[Literal['stop', 'length', 'function_call'],None] =None
 
 
 class DeltaMessage(BaseModel):
@@ -56,6 +56,7 @@ class SSEType(PyEnum):
 
 DUMMY_USER_MSG_ID=0
 DUMMY_CONVERSATION_ID="dummy_conversation_id"
+DUMMY_SESSION_ID=""
 
 
 class SSEDataInit(BaseModel): # according to openai 
@@ -63,7 +64,7 @@ class SSEDataInit(BaseModel): # according to openai
     conversation_id: str = DUMMY_CONVERSATION_ID
 
 class SSEDataIMain(BaseModel): # according to openai 
-    id:str # this is session id = chatcmpl-97EFtZwtMquoIi1mpst2d54A1YaqT
+    id:str =DUMMY_SESSION_ID
     object: str = "chat.completion.chunk"
     created: int = 1711500000 # unix time
     model: str = "gpt-35-turbo-16k"

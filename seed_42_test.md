@@ -49,3 +49,25 @@ The current stock price of Tesla (TSLA) is $177.67. This information is obtained
     "content": "The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It's the result from the `get_current_stock_price` function where we passed the stock symbol \"TSLA\" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.",
     "function_call": null
 }
+
+41 streaming
+	
+id: 1
+event: userMessageId
+data: {"userMessageId":0,"conversation_id":"dummy_conversation_id"}
+
+id: 2
+event: message
+data: {"id":"","object":"chat.completion.chunk","created":1711500000,"model":"gpt-35-turbo-16k","system_fingerprint":null,"choices":[{"index":0,"message":{"role":"user","content":"I need the current stock price of Tesla (TSLA)\nThis is the first turn and you don't have <tool_results> to analyze yet","function_call":null},"finish_reason":null}]}
+
+id: 3
+event: message
+data: {"id":"","object":"chat.completion.chunk","created":1711500000,"model":"gpt-35-turbo-16k","system_fingerprint":null,"choices":[{"index":0,"message":{"role":"assistant","content":"Alright, let's start by calling the function to get the current stock price of Tesla (TSLA).\n\n<tool_call>\n{\"arguments\": {\"symbol\": \"TSLA\"}, \"name\": \"get_current_stock_price\"}\n</tool_call>\n","function_call":null},"finish_reason":null}]}
+
+id: 4
+event: message
+data: {"id":"","object":"chat.completion.chunk","created":1711500000,"model":"gpt-35-turbo-16k","system_fingerprint":null,"choices":[{"index":0,"message":{"role":"tool","content":"Agent iteration 0 to assist with user query: I need the current stock price of Tesla (TSLA)\n<tool_response>\n{\"name\": \"get_current_stock_price\", \"content\": 177.67}\n</tool_response>\n","function_call":null},"finish_reason":null}]}
+
+id: 5
+event: message
+data: {"id":"","object":"chat.completion.chunk","created":1711500000,"model":"gpt-35-turbo-16k","system_fingerprint":null,"choices":[{"index":0,"message":{"role":"assistant","content":"The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It's the result from the `get_current_stock_price` function where we passed the stock symbol \"TSLA\" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.","function_call":null},"finish_reason":null}]}

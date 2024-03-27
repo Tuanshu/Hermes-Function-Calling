@@ -15,11 +15,10 @@ from fastapi.responses import StreamingResponse
 from typing import List,Dict,AsyncGenerator
 
 from utils_logger import logger
-from presentation.dto import ChatCompletionResponse, ChatCompletionRequest,ChatMessage,ChatCompletionResponseChoice,SSEDataIMain
 from application.functioncall_use_case import FunctionCallUseCase
 from common.dependencies import get_function_call_use_case
 from common.preload import preloaded_model,preloaded_tokenizer
-from .dto import SSEDataError,SSEDataIMain,SSEDataInit,SSEDataToolCall,SSEType,SSEDataDone
+from .dto import SSEDataError,SSEDataIMain,SSEDataInit,SSEDataToolCall,SSEType,SSEDataDone,ChatCompletionResponse, ChatCompletionRequest,ChatMessage,ChatCompletionResponseChoice
 # temp
 # from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -40,7 +39,6 @@ async def create_chat_completion(request: ChatCompletionRequest, function_use_ca
 
 
 async def chat_completion_not_stream(request: ChatCompletionRequest, function_use_case:FunctionCallUseCase):
-    logger.info(f'openai-like api called, first messages={request.messages[0].model_dump_json()}')
 
     # not respecting function for now
 
@@ -58,7 +56,6 @@ async def chat_completion_not_stream(request: ChatCompletionRequest, function_us
 
 
 async def chat_completion_stream(request: ChatCompletionRequest, function_use_case:FunctionCallUseCase):
-    logger.info(f'openai-like api called, fist messages={request.messages[0].model_dump_json()}')
 
     # not respecting function for now
 
@@ -87,8 +84,8 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
                 first_flag = False
 
             # 可能需要tool_called flag, 是因為最後儲存時還會再呼叫一次, 可能會導致重複出現
-            if message.role == 'tool_call_args' and not tool_called:
-                current_sse_data = SSEDataToolCall(choices=ChatCompletionResponseChoice(message=message))
+            if message.get('role') == 'tool_call_args' and not tool_called:
+                current_sse_data = SSEDataToolCall()
                 yield f"id: {event_id}\nevent: tool_call\ndata: {current_sse_data.model_dump_json()}\n\n"
                 event_id += 1
                 tool_called = True
@@ -97,7 +94,7 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
             # HACK: 為了避免tool_call之後還有message, 故僅在not tool call時回傳message event
             # (但message還是會更新, 以獲取total_token, 只是不傳給用戶)
             if not tool_called:
-                current_sse_data = SSEDataIMain(choices=ChatCompletionResponseChoice(message=message))
+                current_sse_data = SSEDataIMain(choices=[ChatCompletionResponseChoice(message=ChatMessage(role=message.get('role'),content=message.get('content')))])
                 yield f"id: {event_id}\nevent: {SSEType.BODY.value}\ndata: {current_sse_data.model_dump_json()}\n\n"
                 event_id += 1
 
