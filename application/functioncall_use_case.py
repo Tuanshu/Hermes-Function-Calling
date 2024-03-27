@@ -186,20 +186,28 @@ class FunctionCallUseCase:
             user_message=messages[-1]
             yield user_message # the last message in generate_prompt is usr message. system message omitted.
 
-            completion = self.run_inference(messages)
-
-            async def arecursive_loop(messages:List[ChatMessage], completion, depth)->AsyncGenerator[ChatMessage, None]:
+            async def arecursive_loop(messages:List[ChatMessage], depth)->AsyncGenerator[ChatMessage, None]:
                 nonlocal max_depth # 好像不太需要nonlocal? 不太確定
+
+                # move run_inference here
+                completion = self.run_inference(messages)
                 tool_calls, assistant_message_content, error_message = self.process_completion_and_validate(completion, self.chat_template)
                 tool_calls:List[Dict]
 
                 assistant_message={"role": "assistant", "content": assistant_message_content}
                 messages.append(assistant_message)
                 yield assistant_message # addtional yield
+                inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
 
                 tool_message = f"Agent iteration {depth} to assist with user query: {query}\n" # Don't need this line?
+                
+                # check 是否達到max_depth
+                depth += 1
+                if depth >= max_depth:
+                    print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
+                    return # 結束generator
+
                 if tool_calls:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
 
                     for tool_call in tool_calls:
                         validation, message = validate_function_call_schema(tool_call, tools)
@@ -219,47 +227,29 @@ class FunctionCallUseCase:
                     messages.append(tool_response_message)
                     yield tool_response_message # addtional yield
 
-
-                    depth += 1
-                    # FIXME: 這個check的位置不太好
-                    if depth >= max_depth:
-                        print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                        # yield messages
-
-                    completion = self.run_inference(messages)
+                    # completion = self.run_inference(messages)
 
                     # yield arecursive_loop(messages, completion, depth)
-                    async for deeper_value in arecursive_loop(messages, completion, depth):
+                    async for deeper_value in arecursive_loop(messages, depth):
                         yield deeper_value
 
 
                 elif error_message:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
                     tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
 
                     new_message={"role": "tool", "content": tool_message}
                     messages.append(new_message)
                     yield new_message # addtional yield
 
-                    depth += 1
-                    if depth >= max_depth:
-                        print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                        # yield messages
-
-                    completion = self.run_inference(messages)
+                    # completion = self.run_inference(messages)
                     # yield arecursive_loop(messages, completion, depth)
-                    async for deeper_value in arecursive_loop(messages, completion, depth):
+                    async for deeper_value in arecursive_loop(messages, depth):
                         yield deeper_value
-                else:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
-                    # the followiing is added by ts
-                    new_message={"role": "assistant", "content": assistant_message_content}
-                    messages.append(new_message)
-                    yield new_message
+
 
             # FIXME: 感覺一直出現以下pattern很醜, 但暫時不知道如何解決
             # yield arecursive_loop(messages, completion, depth)
-            async for value in arecursive_loop(messages, completion, depth):
+            async for value in arecursive_loop(messages, depth):
                 yield value
 
 
