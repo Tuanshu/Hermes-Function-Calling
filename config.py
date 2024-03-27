@@ -9,3 +9,4 @@ NUMBER_UVICORN_WORKER = get_env_variable("NUMBER_UVICORN_WORKER", environment)
 
 
 PORT = get_env_variable("PORT", environment)
+PORT_STANDALONE= get_env_variable("PORT_STANDALONE", environment)

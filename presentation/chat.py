@@ -27,39 +27,6 @@ from .dto import SSEDataError,SSEDataIMain,SSEDataInit,SSEDataToolCall,SSEType,S
 
 router = APIRouter()
 
-# standalone API, not streaming
-@router.post('/openai/completions', response_model=ChatCompletionResponse)
-async def create_chat_completion(request: ChatCompletionRequest, standalone_use_case:StandaloneUseCase=Depends(get_standalone_use_case)):
-    logger.info(f'openai-like api called, first messages={request.messages[0].model_dump_json()}')
-    if request.stream:  # 假设stream是请求模型的一部分
-        raise NotImplementedError('streaming not yet implmented.')
-        
-    else:
-        response_string =await standalone_use_case.run_inference_string(prompt=request.messages)
-        choice_data = ChatCompletionResponseChoice(
-        index=0,
-        message=ChatMessage(role='assistant',content=response_string),
-        finish_reason='stop',
-        )                                                
-        return ChatCompletionResponse(model=request.model, choices=[choice_data], object='chat.completion' ,messages=[],failures=[])
-
-
-@router.post('/openai/completions-raw', response_model=ChatCompletionResponse)
-async def create_chat_completion_raw(request: ChatCompletionRequest, standalone_use_case:StandaloneUseCase=Depends(get_standalone_use_case)):
-    logger.info(f'openai-like api called, first messages={request.messages[0].model_dump_json()}')
-    if request.stream:  # 假设stream是请求模型的一部分
-        raise NotImplementedError('streaming not yet implmented.')
-        
-    else:
-        response_string =await standalone_use_case.run_inference(prompt=request.messages)
-        choice_data = ChatCompletionResponseChoice(
-        index=0,
-        message=ChatMessage(role='assistant',content=response_string),
-        finish_reason='stop',
-        )                                                
-        return ChatCompletionResponse(model=request.model, choices=[choice_data], object='chat.completion' ,messages=[],failures=[])
-
-
 
 @router.post('/v1/chat/completions', response_model=ChatCompletionResponse)
 async def create_chat_completion(request: ChatCompletionRequest, function_use_case=Depends(get_function_call_use_case)):

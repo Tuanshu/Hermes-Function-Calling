@@ -78,4 +78,4 @@ python test.py --query "I need the current stock price of Tesla (TSLA)"
  python test_async.py --query "I need the current stock price of Tesla (TSLA)"
  python test.py --query "I need the current stock price of Tesla (TSLA)"
 
-
+ python test_async_message.py --query "I need the current stock price of Tesla (TSLA)"

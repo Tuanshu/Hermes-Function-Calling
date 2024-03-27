@@ -7,6 +7,7 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig
 )
+from requests.exceptions import HTTPError
 
 from application import avaliable_functions
 from prompter import PromptManager
@@ -110,10 +111,20 @@ class FunctionCallUseCase:
 
     def call_inference(self, prompt) -> str:
         request=ChatCompletionRequest(messages=prompt)
-        response = requests.post(f"http://210.58.113.45/openai/completions-raw",json=request.dict())  # /ces/boards/
-        response.raise_for_status()
-        pydantic_response:ChatCompletionResponse = [ChatCompletionResponse.model_validate(response.json())]
-        return  pydantic_response.choices[-1].message.content
+        try:
+            response = requests.post(f"http://210.58.113.45:6616/openai/completions-raw",json=request.model_dump())  # /ces/boards/
+            response.raise_for_status()
+            pydantic_response:ChatCompletionResponse = ChatCompletionResponse.model_validate(response.json())
+            return  pydantic_response.choices[-1].message.content
+        except HTTPError as http_err:
+            if response.status_code == 422:
+                # Handle 422 error specifically
+                error_details = response.json()  # Assuming the error details are in JSON format
+                raise ValueError(f"Error 422: Unprocessable Entity. Details: {error_details}")
+            else:
+                # Handle other HTTP errors
+                raise ValueError(f"HTTP error occurred: {http_err}")
+
     # def run_inference_from_messages(self, messages:List[ChatMessage]):
     #     prompt:List[Dict]= [message.model_dump().pop('function_call') for message in messages]
 
@@ -168,7 +179,10 @@ class FunctionCallUseCase:
                 print(f'[ts] check messages type before run_inference={type(messages[-1])}')
 
 
-                completion = self.run_inference(messages)
+                #completion = self.run_inference(messages)
+                completion = self.call_inference(messages)
+
+
                 tool_calls, assistant_message_content, error_message = self.process_completion_and_validate(completion, self.chat_template)
                 tool_calls:List[Dict]
 
