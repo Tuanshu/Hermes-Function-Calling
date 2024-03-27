@@ -31,5 +31,21 @@
 The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It's the result from the `get_current_stock_price` function where we passed the stock symbol "TSLA" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.
 
 
-42 test with chat (returning)
+41 test with chat (returning)
 ...{'role': 'assistant', 'content': 'The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It\'s the result from the `get_current_stock_price` function where we passed the stock symbol "TSLA" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.'}
+
+
+41 tested with fastapi (chat) I need the current stock price of Tesla (TSLA)
+{
+    "role": "assistant",
+    "content": "The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It's the result from the `get_current_stock_price` function where we passed the stock symbol \"TSLA\" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.",
+    "function_call": null
+}
+
+41 not streaming
+
+{
+    "role": "assistant",
+    "content": "The current stock price of Tesla (TSLA) is $177.67. This information is obtained directly from the function call made, which returned a float value of 177.67. It's the result from the `get_current_stock_price` function where we passed the stock symbol \"TSLA\" as an argument. With this information, I have completed the task for this query related to stock prices. No further function calls are needed here because the query has been answered.",
+    "function_call": null
+}
