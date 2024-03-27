@@ -5,7 +5,7 @@ if __name__ == "__main__":
     parser.add_argument("--query", type=str, default="I need the current stock price of Tesla (TSLA)")
     args = parser.parse_args()
 
-    from preload import preloaded_model, preloaded_tokenizer
+    from common.preload import preloaded_model, preloaded_tokenizer
     use_case = FunctionCallUseCase(preloaded_model, preloaded_tokenizer)
         
     # Run the model evaluator
