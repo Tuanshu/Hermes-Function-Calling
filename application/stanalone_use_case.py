@@ -53,7 +53,7 @@ class StandaloneUseCase:
         inference_logger.info(self.model.generation_config)
         inference_logger.info(self.tokenizer.special_tokens_map)
 
-    def run_inference(self, prompt:List[Union[Dict[str,str],ChatMessage]]):
+    async def run_inference(self, prompt:List[Union[Dict[str,str],ChatMessage]]):
 
         # apply_chat_template是transormers預設的方法, 居然好像可以直接處理pydantic model, 而且似乎空的function_call沒造成影響
         # 好像是因為裡面有ctx = self.new_context(dict(*args, **kwargs))
@@ -75,4 +75,8 @@ class StandaloneUseCase:
         completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
         return completion
 
+    async def run_inference_string(self, prompt:List[Union[Dict[str,str],ChatMessage]]):
 
+        completion = await self.run_inference(prompt)
+
+        return get_assistant_message(completion, self.chat_template, self.tokenizer.eos_token)

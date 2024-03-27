@@ -35,7 +35,13 @@ async def create_chat_completion(request: ChatCompletionRequest, standalone_use_
         raise NotImplementedError('streaming not yet implmented.')
         
     else:
-        return await standalone_use_case.run_inference(prompt=request.messages)
+        response_string =await standalone_use_case.run_inference_string(prompt=request.messages)
+        choice_data = ChatCompletionResponseChoice(
+        index=0,
+        message=ChatMessage(role='assistant',content=response_string),
+        finish_reason='stop',
+        )                                                
+        return ChatCompletionResponse(model=request.model, choices=[choice_data], object='chat.completion' ,messages=[],failures=[])
 
 
 
