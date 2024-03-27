@@ -101,76 +101,6 @@ class FunctionCallUseCase:
         completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
         return completion
 
-    def chat(self, query, num_fewshot=None, max_depth=5)->List[ChatMessage]:
-        try:
-            depth = 0
-            user_message = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
-            chat = [{"role": "user", "content": user_message}]
-            #tools = avaliable_functions.get_openai_tool_dicts()
-            # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
-            tools = avaliable_functions.get_openai_tool_dicts_no_at_tool_dec()
-
-            messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
-            completion = self.run_inference(messages)
-
-            def recursive_loop(messages:List[ChatMessage], completion, depth):
-                nonlocal max_depth
-                tool_calls, assistant_message, error_message = self.process_completion_and_validate(completion, self.chat_template)
-                tool_calls:List[Dict]
-
-                messages.append({"role": "assistant", "content": assistant_message})
-
-                tool_message = f"Agent iteration {depth} to assist with user query: {query}\n"
-                if tool_calls:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
-
-                    for tool_call in tool_calls:
-                        validation, message = validate_function_call_schema(tool_call, tools)
-                        if validation:
-                            try:
-                                function_response = self.execute_function_call(tool_call)
-                                tool_message += f"<tool_response>\n{function_response}\n</tool_response>\n"
-                                inference_logger.info(f"Here's the response from the function call: {tool_call.get('name')}\n{function_response}")
-                            except Exception as e:
-                                inference_logger.info(f"Could not execute function: {e}")
-                                tool_message += f"<tool_response>\nThere was an error when executing the function: {tool_call.get('name')}\nHere's the error traceback: {e}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
-                        else:
-                            inference_logger.info(message)
-                            tool_message += f"<tool_response>\nThere was an error validating function call against function signature: {tool_call.get('name')}\nHere's the error traceback: {message}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
-                    messages.append({"role": "tool", "content": tool_message})
-
-                    depth += 1
-                    if depth >= max_depth:
-                        print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                        return messages
-
-                    completion = self.run_inference(messages)
-                    return recursive_loop(messages, completion, depth)
-                elif error_message:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
-                    tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
-                    messages.append({"role": "tool", "content": tool_message})
-
-                    depth += 1
-                    if depth >= max_depth:
-                        print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
-                        return messages
-
-                    completion = self.run_inference(messages)
-                    return recursive_loop(messages, completion, depth)
-                else:
-                    inference_logger.info(f"Assistant Message:\n{assistant_message}")
-                    # the followiing is added by ts
-                    messages.append({"role": "assistant", "content": assistant_message})
-                    return messages
-                
-            return recursive_loop(messages, completion, depth)
-
-        except Exception as e:
-            inference_logger.error(f"Exception occurred: {e}")
-            raise e
-
-
 
     # this is a async generator (with yield instead of return)
     async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
@@ -251,6 +181,91 @@ class FunctionCallUseCase:
             # yield arecursive_loop(messages, completion, depth)
             async for value in arecursive_loop(messages, depth):
                 yield value
+
+
+        except Exception as e:
+            inference_logger.error(f"Exception occurred: {e}")
+            raise e
+        
+
+    # this is a async generator (with yield instead of return)
+    def chat(self, query, num_fewshot=None, max_depth=5)-> ChatMessage:
+        try:
+            depth = 0
+            user_message_content = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
+            chat = [{"role": "user", "content": user_message_content}]
+            #tools = avaliable_functions.get_openai_tool_dicts()
+            # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
+            tools = avaliable_functions.get_openai_tool_dicts_no_at_tool_dec()
+
+            messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
+
+            def recursive_loop(messages:List[ChatMessage], depth)->ChatMessage:
+                nonlocal max_depth # 好像不太需要nonlocal? 不太確定
+
+                # move run_inference here
+                completion = self.run_inference(messages)
+                tool_calls, assistant_message_content, error_message = self.process_completion_and_validate(completion, self.chat_template)
+                tool_calls:List[Dict]
+
+                assistant_message={"role": "assistant", "content": assistant_message_content}
+                messages.append(assistant_message)
+                inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
+
+                tool_message = f"Agent iteration {depth} to assist with user query: {query}\n" # Don't need this line?
+                
+                # check 是否達到max_depth
+                depth += 1
+                if depth >= max_depth:
+                    print(f"Maximum recursion depth reached ({max_depth}). Stopping recursion.")
+                    return messages # 結束
+
+                # 假設沒tool_calls or error_message, 也return
+
+                if (not tool_calls) and (not error_message):
+                    print(f"No more tool call. Stopping recursion.")
+                    return messages # 結束
+
+                if tool_calls:
+
+                    for tool_call in tool_calls:
+                        validation, message = validate_function_call_schema(tool_call, tools)
+                        if validation:
+                            try:
+                                function_response = self.execute_function_call(tool_call)
+                                tool_message += f"<tool_response>\n{function_response}\n</tool_response>\n"
+                                inference_logger.info(f"Here's the response from the function call: {tool_call.get('name')}\n{function_response}")
+                            except Exception as e:
+                                inference_logger.info(f"Could not execute function: {e}")
+                                tool_message += f"<tool_response>\nThere was an error when executing the function: {tool_call.get('name')}\nHere's the error traceback: {e}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
+                        else:
+                            inference_logger.info(message)
+                            tool_message += f"<tool_response>\nThere was an error validating function call against function signature: {tool_call.get('name')}\nHere's the error traceback: {message}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
+
+                    tool_response_message={"role": "tool", "content": tool_message}
+                    messages.append(tool_response_message)
+
+                    # completion = self.run_inference(messages)
+
+                    # yield arecursive_loop(messages, completion, depth)
+                    return recursive_loop(messages, depth)
+
+
+                elif error_message:
+                    tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
+
+                    new_message={"role": "tool", "content": tool_message}
+                    messages.append(new_message)
+
+                    # completion = self.run_inference(messages)
+                    # yield arecursive_loop(messages, completion, depth)
+                    return recursive_loop(messages, depth)
+                
+                    
+
+            # FIXME: 感覺一直出現以下pattern很醜, 但暫時不知道如何解決
+            # yield arecursive_loop(messages, completion, depth)
+            return recursive_loop(messages, depth)
 
 
         except Exception as e:
