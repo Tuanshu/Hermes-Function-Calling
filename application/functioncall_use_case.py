@@ -84,6 +84,10 @@ class FunctionCallUseCase:
         return results_dict
     
     def run_inference(self, prompt):
+
+        # apply_chat_template是transormers預設的方法, 居然好像可以直接處理pydantic model, 而且似乎空的function_call沒造成影響
+        # 好像是因為裡面有ctx = self.new_context(dict(*args, **kwargs))
+        
         inputs = self.tokenizer.apply_chat_template(
             prompt,
             add_generation_prompt=True,
@@ -102,25 +106,25 @@ class FunctionCallUseCase:
         return completion
 
 
-    def run_inference_from_messages(self, messages:List[ChatMessage]):
-        prompt:List[Dict]= [message.model_dump().pop('function_call') for message in messages]
+    # def run_inference_from_messages(self, messages:List[ChatMessage]):
+    #     prompt:List[Dict]= [message.model_dump().pop('function_call') for message in messages]
 
-        inputs = self.tokenizer.apply_chat_template(
-            prompt,
-            add_generation_prompt=True,
-            return_tensors='pt'
-        )
+    #     inputs = self.tokenizer.apply_chat_template(
+    #         prompt,
+    #         add_generation_prompt=True,
+    #         return_tensors='pt'
+    #     )
 
-        tokens = self.model.generate(
-            inputs.to(self.model.device),
-            max_new_tokens=1500,
-            temperature=0.8,
-            repetition_penalty=1.1,
-            do_sample=True,
-            eos_token_id=self.tokenizer.eos_token_id,
-        )
-        completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
-        return completion
+    #     tokens = self.model.generate(
+    #         inputs.to(self.model.device),
+    #         max_new_tokens=1500,
+    #         temperature=0.8,
+    #         repetition_penalty=1.1,
+    #         do_sample=True,
+    #         eos_token_id=self.tokenizer.eos_token_id,
+    #     )
+    #     completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
+    #     return completion
 
     # this is a async generator (with yield instead of return)
     async def achat(self, query, num_fewshot=None, max_depth=5)->AsyncGenerator[ChatMessage, None]:
@@ -141,11 +145,15 @@ class FunctionCallUseCase:
                 nonlocal max_depth # 好像不太需要nonlocal? 不太確定
 
                 # move run_inference here
+                print(f'[ts] check messages type before run_inference={type(messages[-1])}')
+
+
                 completion = self.run_inference(messages)
                 tool_calls, assistant_message_content, error_message = self.process_completion_and_validate(completion, self.chat_template)
                 tool_calls:List[Dict]
 
-                assistant_message={"role": "assistant", "content": assistant_message_content}
+                # assistant_message={"role": "assistant", "content": assistant_message_content}
+                assistant_message=ChatMessage(role="assistant",content=assistant_message_content)
                 messages.append(assistant_message)
                 yield assistant_message # addtional yield
                 inference_logger.info(f"Assistant Message:\n{assistant_message_content}")
@@ -174,7 +182,10 @@ class FunctionCallUseCase:
                             inference_logger.info(message)
                             tool_message += f"<tool_response>\nThere was an error validating function call against function signature: {tool_call.get('name')}\nHere's the error traceback: {message}\nPlease call this function again with correct arguments within XML tags <tool_call></tool_call>\n</tool_response>\n"
 
-                    tool_response_message={"role": "tool", "content": tool_message}
+                    #tool_response_message={"role": "tool", "content": tool_message}
+                    tool_response_message=ChatMessage(role="tool",content=tool_message)
+
+
                     messages.append(tool_response_message)
                     yield tool_response_message # addtional yield
 
@@ -188,9 +199,11 @@ class FunctionCallUseCase:
                 elif error_message:
                     tool_message += f"<tool_response>\nThere was an error parsing function calls\n Here's the error stack trace: {error_message}\nPlease call the function again with correct syntax<tool_response>"
 
-                    new_message={"role": "tool", "content": tool_message}
-                    messages.append(new_message)
-                    yield new_message # addtional yield
+                    #new_message={"role": "tool", "content": tool_message}
+                    tool_error_message=ChatMessage(role="tool",content=tool_message)
+                    
+                    messages.append(tool_error_message)
+                    yield tool_error_message # addtional yield
 
                     # completion = self.run_inference(messages)
                     # yield arecursive_loop(messages, completion, depth)
