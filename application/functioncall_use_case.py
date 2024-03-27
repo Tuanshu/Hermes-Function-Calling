@@ -99,7 +99,10 @@ class FunctionCallUseCase:
             depth = 0
             user_message = f"{query}\nThis is the first turn and you don't have <tool_results> to analyze yet"
             chat = [{"role": "user", "content": user_message}]
-            tools = avaliable_functions.get_openai_tool_dicts()
+            #tools = avaliable_functions.get_openai_tool_dicts()
+            # 因為@tool (from langchain看起來會限制只有一個input, 可能用arg_schema可解), 所以改在生成openai_tool_desc處加上tool()
+            tools = avaliable_functions.get_openai_tool_dicts_no_at_tool_dec()
+
             messages:List[ChatMessage] = self.prompter.generate_prompt(chat, tools, num_fewshot)
             completion = self.run_inference(messages)
 
