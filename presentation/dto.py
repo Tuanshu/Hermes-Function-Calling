@@ -71,28 +71,19 @@ class SSEDataIMain(BaseModel): # according to openai
     choices: List[ChatCompletionResponseChoice]
 
 
-class SSEDataToolCall(BaseModel): # according to openai 
-    id:str # this is session id = chatcmpl-97EFtZwtMquoIi1mpst2d54A1YaqT
-    object: str = "chat.completion.chunk"
-    created: int = 1711500000 # unix time
-    model: str = "gpt-35-turbo-16k"
-    system_fingerprint:str = None # not sure
-    choices: List[ChatCompletionResponseChoice]
+class SSEDataToolCall(BaseModel): # this is for generating args to UI, openai do not have tihs behavior
+    content:List[str] = ['dummy_arg_1','dummy_arg_2']
 
 
 class SSEDataError(BaseModel): # according to openai 
-    id:str # this is session id = chatcmpl-97EFtZwtMquoIi1mpst2d54A1YaqT
-    object: str = "chat.completion.chunk"
-    created: int = 1711500000 # unix time
-    model: str = "gpt-35-turbo-16k"
-    system_fingerprint:str = None # not sure
-    choices: List[ChatCompletionResponseChoice]
+    detail:str =""
 
+DUMMY_BOT_MSG_ID=1
+DUMMY_CONVERSATION_ID="dummy_conversation_id"
 
 class SSEDataDone(BaseModel): # according to openai 
-    id:str # this is session id = chatcmpl-97EFtZwtMquoIi1mpst2d54A1YaqT
-    object: str = "chat.completion.chunk"
-    created: int = 1711500000 # unix time
-    model: str = "gpt-35-turbo-16k"
-    system_fingerprint:str = None # not sure
-    choices: List[ChatCompletionResponseChoice]
+    messageId:int =DUMMY_BOT_MSG_ID
+    conversationId: str = DUMMY_CONVERSATION_ID
+    total_tokens: int = 0
+    newDocId: str = None
+

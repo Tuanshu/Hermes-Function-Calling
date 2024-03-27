@@ -83,14 +83,13 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
             if first_flag:
                 current_sse_data = SSEDataInit()
                 yield f'id: {event_id}\nevent: {SSEType.INIT.value}\ndata: {current_sse_data.model_dump_json()}\n\n'
-
                 event_id += 1
                 first_flag = False
 
             # 可能需要tool_called flag, 是因為最後儲存時還會再呼叫一次, 可能會導致重複出現
             if message.role == 'tool_call_args' and not tool_called:
                 current_sse_data = SSEDataToolCall(choices=ChatCompletionResponseChoice(message=message))
-                yield f"id: {event_id}\nevent: tool_call\ndata: {current_sse_data.model_dump_json()}\nretry: 3000\n\n"
+                yield f"id: {event_id}\nevent: tool_call\ndata: {current_sse_data.model_dump_json()}\n\n"
                 event_id += 1
                 tool_called = True
                 continue
@@ -105,10 +104,11 @@ async def main_stream(generator: AsyncGenerator[ChatMessage, None]):
     except Exception as exc:
         error_message = str(exc)
         logger.error(f"An error occurred during streaming: {error_message}")
+        current_sse_data=SSEDataError(detail=error_message)
         yield f'id: {event_id}\nevent: {SSEType.ERROR.value}\ndata: {current_sse_data.model_dump_json()}\n\n'
         return  # exception發生後, 不回傳done, 也不raise error到外側 (因為已經開始streaming)
 
     # Done, last message handling
 
-
+    current_sse_data=SSEDataDone()
     yield f'id: {event_id}\nevent: {SSEType.DONE.value}\ndata: {current_sse_data.model_dump_json()}\n\n'
