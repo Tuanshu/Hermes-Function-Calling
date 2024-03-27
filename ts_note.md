@@ -72,4 +72,7 @@ python test.py --query "I need the current stock price of Tesla (TSLA)"
 
 1. 是否有@tool在產生文檔上的不同:
  a. 如果有, 則會多一個\'code_interpreter(code_markdown: str) -> dict | str的python style type hint.
- b. 如果沒有, 
+ b. 如果沒有, 除了Parameters看起來OK外, Args和Notes和Returns在產生文檔時可能缺漏
+
+
+ python test_async.py --query "I need the current stock price of Tesla (TSLA)"
