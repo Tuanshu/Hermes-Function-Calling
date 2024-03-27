@@ -11,7 +11,7 @@ from transformers import (
 from application import avaliable_functions
 from prompter import PromptManager
 from validator import validate_function_call_schema
-
+import requests
 from typing import List,Dict,AsyncGenerator
 
 from utils import (
@@ -23,6 +23,9 @@ from utils import (
 )
 
 from domain_models import ChatMessage
+
+# HACK: !!!!!!!
+from presentation.dto import ChatCompletionResponse,ChatCompletionRequest
 
 
 # TS set seed
@@ -105,7 +108,12 @@ class FunctionCallUseCase:
         completion = self.tokenizer.decode(tokens[0], skip_special_tokens=False, clean_up_tokenization_space=True)
         return completion
 
-
+    def call_inference(self, prompt) -> str:
+        request=ChatCompletionRequest(messages=prompt)
+        response = requests.post(f"http://210.58.113.45/openai/completions-raw",json=request.dict())  # /ces/boards/
+        response.raise_for_status()
+        pydantic_response:ChatCompletionResponse = [ChatCompletionResponse.model_validate(response.json())]
+        return  pydantic_response.choices[-1].message.content
     # def run_inference_from_messages(self, messages:List[ChatMessage]):
     #     prompt:List[Dict]= [message.model_dump().pop('function_call') for message in messages]
 

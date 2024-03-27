@@ -6,7 +6,7 @@ from domain_models import ChatMessage
 
 
 class ChatCompletionRequest(BaseModel):
-    model: str
+    model: str = None
     messages: List[ChatMessage]
     functions: Optional[List[Dict]] = None
     seed: Optional[int] = None  # ignoring, simply testing
